@@ -58,7 +58,16 @@ def metricas_dashboard():
             "SELECT COUNT(*) FROM noticias WHERE datetime(publicado) >= datetime('now','-24 hours')"
         ).fetchone()[0]
         por_veiculo = con.execute(
-            "SELECT veiculo, COUNT(*) total FROM noticias GROUP BY veiculo ORDER BY total DESC, veiculo LIMIT 8"
+            "SELECT veiculo, COUNT(*) total FROM noticias GROUP BY veiculo ORDER BY total DESC, veiculo"
+        ).fetchall()
+        por_dia = con.execute(
+            """WITH RECURSIVE dias(data) AS (
+                 SELECT date('now','localtime','-6 days')
+                 UNION ALL SELECT date(data,'+1 day') FROM dias WHERE data < date('now','localtime')
+               )
+               SELECT dias.data, COUNT(n.id) total
+               FROM dias LEFT JOIN noticias n ON substr(n.publicado,1,10)=dias.data
+               GROUP BY dias.data ORDER BY dias.data"""
         ).fetchall()
         todas_tags = con.execute("SELECT termos FROM noticias").fetchall()
     contagem = {}
@@ -68,5 +77,14 @@ def metricas_dashboard():
             if termo:
                 contagem[termo] = contagem.get(termo, 0) + 1
     assuntos = sorted(contagem.items(), key=lambda item: (-item[1], item[0]))[:8]
+    graficos = {
+        "veiculos_labels": [item["veiculo"] for item in por_veiculo],
+        "veiculos_valores": [item["total"] for item in por_veiculo],
+        "assuntos_labels": [item[0] for item in assuntos],
+        "assuntos_valores": [item[1] for item in assuntos],
+        "dias_labels": [item["data"] for item in por_dia],
+        "dias_valores": [item["total"] for item in por_dia],
+    }
     return {"hoje": total_hoje, "ultimas_24h": ultimas_24h,
-            "por_veiculo": por_veiculo, "assuntos": assuntos}
+            "por_veiculo": por_veiculo, "assuntos": assuntos,
+            "por_dia": por_dia, "graficos": graficos}
