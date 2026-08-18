@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>STF News Monitor</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+</head>
+<body>
+<header><div><span class="eyebrow">CLIPPING DE IMPRENSA</span><h1>STF News Monitor</h1><p>STF, CNJ e ministros em um só painel.</p></div>
+  <form method="post" action="{{ url_for('atualizar') }}"><button class="primary">↻ Buscar novas notícias</button></form>
+</header>
+<main>
+{% for category, message in get_flashed_messages(with_categories=true) %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}
+<section class="update-status"><span class="pulse"></span><span id="status-texto">Atualização automática a cada {{ intervalo }} minutos{% if estado.ultima %} · última: {{ estado.ultima }}{% endif %}</span></section>
+<section class="stats"><div><b>{{ dashboard.hoje }}</b><span>notícias hoje</span></div><div><b>{{ dashboard.ultimas_24h }}</b><span>nas últimas 24 horas</span></div><div><b>{{ veiculos|length }}</b><span>veículos monitorados</span></div><div><b>{{ favoritos }}</b><span>favoritas</span></div></section>
+<section class="dashboard">
+  <div class="panel"><h2>Cobertura por veículo</h2>{% set vmax = dashboard.por_veiculo[0].total if dashboard.por_veiculo else 1 %}{% for item in dashboard.por_veiculo %}<div class="bar-row"><span>{{ item.veiculo }}</span><div class="bar-track"><i style="width:{{ (item.total * 100 / vmax)|round }}%"></i></div><b>{{ item.total }}</b></div>{% else %}<p>Os dados aparecerão após a primeira busca.</p>{% endfor %}</div>
+  <div class="panel"><h2>Assuntos e ministros mais citados</h2>{% set amax = dashboard.assuntos[0][1] if dashboard.assuntos else 1 %}{% for nome, quantidade in dashboard.assuntos %}<div class="bar-row"><span>{{ nome }}</span><div class="bar-track gold"><i style="width:{{ (quantidade * 100 / amax)|round }}%"></i></div><b>{{ quantidade }}</b></div>{% else %}<p>Os dados aparecerão após a primeira busca.</p>{% endfor %}</div>
+</section>
+<form class="filters" method="get">
+  <input name="q" value="{{ request.args.get('q','') }}" placeholder="Pesquisar título ou pessoa…">
+  <select name="termo"><option value="">Todos os assuntos</option>{% for t in termos %}<option {{ 'selected' if request.args.get('termo')==t }}>{{ t }}</option>{% endfor %}</select>
+  <select name="veiculo"><option value="">Todos os veículos</option>{% for v in veiculos %}<option {{ 'selected' if request.args.get('veiculo')==v }}>{{ v }}</option>{% endfor %}</select>
+  <label><input type="checkbox" name="favoritos" value="1" {{ 'checked' if request.args.get('favoritos')=='1' }}> Favoritas</label>
+  <button>Filtrar</button><a href="{{ url_for('index') }}">Limpar</a>
+</form>
+<div class="toolbar"><h2>Notícias</h2><a class="button" href="{{ url_for('exportar_csv', **request.args) }}">Baixar CSV</a></div>
+<section class="grid">
+{% for n in noticias %}
+<article><div class="meta"><span>{{ n.veiculo }}</span><time>{{ (n.publicado or n.coletado)[:16].replace('T',' ') }}</time></div>
+  <h3>{{ n.titulo }}</h3><div class="tags">{% for tag in n.termos.split(',') %}<small>{{ tag }}</small>{% endfor %}</div>
+  <div class="actions"><a class="primary" target="_blank" rel="noopener" href="{{ n.link }}">Ler notícia</a>
+  <a target="_blank" rel="noopener" href="https://wa.me/?text={{ ('📰 ' ~ n.titulo ~ '\n\n' ~ n.link)|urlencode }}">WhatsApp</a>
+  <button type="button" onclick='copiar({{ (n.titulo ~ "\n" ~ n.link)|tojson }})'>Copiar</button>
+  <form method="post" action="{{ url_for('favorito', noticia_id=n.id) }}"><button title="Favoritar">{{ '★' if n.favorito else '☆' }}</button></form></div>
+</article>
+{% else %}<div class="empty"><h3>Nenhuma notícia ainda</h3><p>Clique em “Buscar novas notícias” para iniciar o monitoramento.</p></div>{% endfor %}
+</section></main>
+<footer>Os títulos e links direcionam para os veículos originais. O sistema não copia o conteúdo integral das matérias.</footer>
+<script>
+async function copiar(t){await navigator.clipboard.writeText(t);alert('Título e link copiados!')}
+async function atualizarAutomaticamente(){
+  const texto=document.getElementById('status-texto');
+  texto.textContent='Buscando novas notícias em segundo plano…';
+  await fetch('/atualizar-automatico',{method:'POST'});
+  const acompanhar=setInterval(async()=>{
+    const r=await fetch('/status-atualizacao'); const s=await r.json();
+    if(!s.executando && s.ultima){clearInterval(acompanhar);texto.textContent=`Atualizado em ${s.ultima} · ${s.novas} nova(s). A página será recarregada.`;setTimeout(()=>location.reload(),1800)}
+  },5000);
+}
+{% if not estado.ultima %}setTimeout(atualizarAutomaticamente,3000);{% endif %}
+setInterval(atualizarAutomaticamente,{{ intervalo }}*60*1000);
+</script>
+</body></html>
