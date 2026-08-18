@@ -16,7 +16,15 @@ VEICULOS = {
     "Folha": "folha.uol.com.br",
     "Revista Oeste": "revistaoeste.com",
     "CNN Brasil": "cnnbrasil.com.br",
+    "UOL": "uol.com.br",
+    "DW Brasil": "dw.com",
+    "R7": "r7.com",
+    "Agência Brasil": "agenciabrasil.ebc.com.br",
+    "O Tempo": "otempo.com.br",
+    "JOTA": "jota.info",
 }
+
+INTERVALO_ATUALIZACAO_MINUTOS = 15
 
 TERMOS = [
     "STF", "Supremo Tribunal Federal", "CNJ",
@@ -24,4 +32,3 @@ TERMOS = [
     "Nunes Marques", "Luiz Fux", "André Mendonça",
     "Cristiano Zanin", "Gilmar Mendes", "Dias Toffoli", "Flávio Dino",
 ]
-
