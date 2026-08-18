@@ -1,0 +1,13 @@
+.update-status{display:flex;align-items:center;gap:9px;color:#526277;margin-bottom:14px;font-size:13px}
+.pulse{width:9px;height:9px;border-radius:50%;background:#25a767;box-shadow:0 0 0 5px #dff4e8}
+.stats{grid-template-columns:repeat(4,1fr)}
+.dashboard{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.panel{background:white;border:1px solid var(--line);border-radius:14px;padding:20px}
+.panel h2{font:700 19px Georgia,serif;margin:0 0 16px}
+.bar-row{display:grid;grid-template-columns:125px 1fr 28px;align-items:center;gap:10px;margin:9px 0;font-size:13px}
+.bar-row>span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-track{height:9px;border-radius:9px;background:#edf1f6;overflow:hidden}
+.bar-track i{display:block;height:100%;background:var(--blue);border-radius:9px}
+.bar-track.gold i{background:var(--gold)}
+.chart-card{min-height:390px}.chart-card.timeline{grid-column:1/-1;min-height:330px}.chart-kicker{font-size:10px;font-weight:800;letter-spacing:.16em;color:#8a7441}.chart-wrap{position:relative;height:300px;margin-top:8px}.chart-wrap.doughnut{height:310px}.chart-wrap.line{height:235px}
+@media(max-width:760px){.dashboard{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}.bar-row{grid-template-columns:105px 1fr 25px}.chart-card.timeline{grid-column:auto}.chart-wrap,.chart-wrap.doughnut{height:280px}}
