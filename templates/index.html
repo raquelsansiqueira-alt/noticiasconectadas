@@ -5,6 +5,7 @@
   <title>STF News Monitor</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 </head>
 <body>
 <header><div><span class="eyebrow">CLIPPING DE IMPRENSA</span><h1>STF News Monitor</h1><p>STF, CNJ e ministros em um só painel.</p></div>
@@ -15,8 +16,9 @@
 <section class="update-status"><span class="pulse"></span><span id="status-texto">Atualização automática a cada {{ intervalo }} minutos{% if estado.ultima %} · última: {{ estado.ultima }}{% endif %}</span></section>
 <section class="stats"><div><b>{{ dashboard.hoje }}</b><span>notícias hoje</span></div><div><b>{{ dashboard.ultimas_24h }}</b><span>nas últimas 24 horas</span></div><div><b>{{ veiculos|length }}</b><span>veículos monitorados</span></div><div><b>{{ favoritos }}</b><span>favoritas</span></div></section>
 <section class="dashboard">
-  <div class="panel"><h2>Cobertura por veículo</h2>{% set vmax = dashboard.por_veiculo[0].total if dashboard.por_veiculo else 1 %}{% for item in dashboard.por_veiculo %}<div class="bar-row"><span>{{ item.veiculo }}</span><div class="bar-track"><i style="width:{{ (item.total * 100 / vmax)|round }}%"></i></div><b>{{ item.total }}</b></div>{% else %}<p>Os dados aparecerão após a primeira busca.</p>{% endfor %}</div>
-  <div class="panel"><h2>Assuntos e ministros mais citados</h2>{% set amax = dashboard.assuntos[0][1] if dashboard.assuntos else 1 %}{% for nome, quantidade in dashboard.assuntos %}<div class="bar-row"><span>{{ nome }}</span><div class="bar-track gold"><i style="width:{{ (quantidade * 100 / amax)|round }}%"></i></div><b>{{ quantidade }}</b></div>{% else %}<p>Os dados aparecerão após a primeira busca.</p>{% endfor %}</div>
+  <div class="panel chart-card"><div><span class="chart-kicker">DISTRIBUIÇÃO</span><h2>Cobertura por veículo</h2></div><div class="chart-wrap doughnut"><canvas id="graficoVeiculos"></canvas></div></div>
+  <div class="panel chart-card"><div><span class="chart-kicker">RANKING</span><h2>Assuntos e ministros mais citados</h2></div><div class="chart-wrap"><canvas id="graficoAssuntos"></canvas></div></div>
+  <div class="panel chart-card timeline"><div><span class="chart-kicker">EVOLUÇÃO</span><h2>Notícias nos últimos sete dias</h2></div><div class="chart-wrap line"><canvas id="graficoDias"></canvas></div></div>
 </section>
 <form class="filters" method="get">
   <input name="q" value="{{ request.args.get('q','') }}" placeholder="Pesquisar título ou pessoa…">
@@ -39,6 +41,11 @@
 </section></main>
 <footer>Os títulos e links direcionam para os veículos originais. O sistema não copia o conteúdo integral das matérias.</footer>
 <script>
+const cores=['#173b70','#c6a24d','#3d6ca6','#79a2d2','#8a6f2c','#56728f','#9db4ca','#d2bc7d','#244f82','#6f8eae','#b18b35','#abc3da','#496989','#ddc98f','#315f93','#829bb4'];
+const comum={responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{usePointStyle:true,boxWidth:8,font:{family:'system-ui'}}}}};
+new Chart(document.getElementById('graficoVeiculos'),{type:'doughnut',data:{labels:{{ dashboard.graficos.veiculos_labels|tojson }},datasets:[{data:{{ dashboard.graficos.veiculos_valores|tojson }},backgroundColor:cores,borderColor:'#fff',borderWidth:3,hoverOffset:8}]},options:{...comum,cutout:'66%',plugins:{...comum.plugins,legend:{position:'right',labels:{usePointStyle:true,boxWidth:8,padding:12}}}}});
+new Chart(document.getElementById('graficoAssuntos'),{type:'bar',data:{labels:{{ dashboard.graficos.assuntos_labels|tojson }},datasets:[{label:'Notícias',data:{{ dashboard.graficos.assuntos_valores|tojson }},backgroundColor:'#c6a24d',borderRadius:6}]},options:{...comum,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,ticks:{precision:0},grid:{color:'#edf1f6'}},y:{grid:{display:false}}}}});
+new Chart(document.getElementById('graficoDias'),{type:'line',data:{labels:{{ dashboard.graficos.dias_labels|tojson }},datasets:[{label:'Notícias',data:{{ dashboard.graficos.dias_valores|tojson }},borderColor:'#173b70',backgroundColor:'rgba(23,59,112,.12)',fill:true,tension:.35,pointBackgroundColor:'#c6a24d',pointBorderColor:'#fff',pointBorderWidth:2,pointRadius:5}]},options:{...comum,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{precision:0},grid:{color:'#edf1f6'}},x:{grid:{display:false}}}}});
 async function copiar(t){await navigator.clipboard.writeText(t);alert('Título e link copiados!')}
 async function atualizarAutomaticamente(){
   const texto=document.getElementById('status-texto');
